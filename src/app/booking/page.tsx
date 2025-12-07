@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiGet, apiPost } from "@/lib/api";
 
@@ -35,7 +35,7 @@ const TIMESLOTS = [
   "15:30", "17:00", "19:00",
 ];
 
-export default function BookingPage() {
+function BookingPageInner() {
   const searchParams = useSearchParams();
   const initialServiceId = searchParams.get("serviceId");
   const workshopId = searchParams.get("workshopId");
@@ -559,5 +559,13 @@ export default function BookingPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={null}>
+      <BookingPageInner />
+    </Suspense>
   );
 }
