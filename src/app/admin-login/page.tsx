@@ -1,10 +1,10 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AdminLoginStandalonePage() {
+function AdminLoginStandalonePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/admin";
@@ -130,5 +130,13 @@ export default function AdminLoginStandalonePage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function AdminLoginStandalonePage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminLoginStandalonePageInner />
+    </Suspense>
   );
 }
