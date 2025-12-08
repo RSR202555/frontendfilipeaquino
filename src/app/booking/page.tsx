@@ -71,22 +71,33 @@ function BookingPageInner() {
   useEffect(() => {
     async function loadServicesAndWorkshop() {
       try {
-        const data = await apiGet<Service[]>("/api/services");
-        setServices(data);
+        // Se NÃO for fluxo de workshop, carregamos os serviços normalmente
+        if (!workshopId) {
+          const data = await apiGet<Service[]>("/api/services");
+          setServices(data);
 
-        if (initialServiceId) {
-          setSelectedServiceId(Number(initialServiceId));
+          if (initialServiceId) {
+            setSelectedServiceId(Number(initialServiceId));
+          }
         }
 
+        // Se for fluxo de workshop, focamos em carregar apenas o workshop selecionado
         if (workshopId) {
-          // Carrega workshops ativos e encontra o selecionado
           const workshops = await apiGet<Workshop[]>("/api/workshops");
           const w = workshops.find((wk) => wk.id === Number(workshopId)) || null;
           setSelectedWorkshop(w);
+
+          if (!w) {
+            setError("Workshop não encontrado. Tente novamente mais tarde.");
+          }
         }
       } catch (e) {
         console.error(e);
-        setError("Erro ao carregar serviços. Tente novamente em instantes.");
+        if (workshopId) {
+          setError("Erro ao carregar dados do workshop. Tente novamente em instantes.");
+        } else {
+          setError("Erro ao carregar serviços. Tente novamente em instantes.");
+        }
       }
     }
 
