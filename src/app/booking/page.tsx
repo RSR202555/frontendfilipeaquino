@@ -543,37 +543,62 @@ function BookingPageInner() {
               )}
 
               <p className="text-[11px] text-slate-500">
-                {workshopId && selectedWorkshop ? (
-                  <>
-                    Você está se inscrevendo no workshop {" "}
-                    <span className="text-sky-100 font-medium">
-                      {selectedWorkshop.title}
-                    </span>{" "}
-                    na data {" "}
-                    <span className="text-sky-100 font-medium">
-                      {new Date(selectedWorkshop.date).toLocaleDateString("pt-BR", {
+                {workshopId && selectedWorkshop
+                  ? (() => {
+                      const start = new Date(selectedWorkshop.date);
+                      const end = new Date(start.getTime() + selectedWorkshop.durationMin * 60000);
+
+                      const dateLabel = start.toLocaleDateString("pt-BR", {
                         day: "2-digit",
                         month: "2-digit",
                         year: "numeric",
-                      })}
-                    </span>
-                    .
-                  </>
-                ) : selectedService && selectedTimeslot ? (
-                  <>
-                    Você selecionou{" "}
-                    <span className="text-sky-100 font-medium">
-                      {selectedService.name}
-                    </span>{" "}
-                    às{" "}
-                    <span className="text-sky-100 font-medium">
-                      {selectedTimeslot}
-                    </span>
-                    .
-                  </>
-                ) : (
-                  <>Selecione um serviço e um horário para continuar.</>
-                )}
+                      });
+
+                      const startTimeLabel = start.toLocaleTimeString("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      });
+
+                      const endTimeLabel = end.toLocaleTimeString("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      });
+
+                      return (
+                        <>
+                          Você está se inscrevendo no workshop {" "}
+                          <span className="text-sky-100 font-medium">
+                            {selectedWorkshop.title}
+                          </span>{" "}
+                          em {" "}
+                          <span className="text-sky-100 font-medium">
+                            {dateLabel}
+                          </span>{" "}
+                          das {" "}
+                          <span className="text-sky-100 font-medium">
+                            {startTimeLabel} - {endTimeLabel}
+                          </span>
+                          .
+                        </>
+                      );
+                    })()
+                  : selectedService && selectedTimeslot
+                  ? (
+                      <>
+                        Você selecionou{" "}
+                        <span className="text-sky-100 font-medium">
+                          {selectedService.name}
+                        </span>{" "}
+                        às{" "}
+                        <span className="text-sky-100 font-medium">
+                          {selectedTimeslot}
+                        </span>
+                        .
+                      </>
+                    )
+                  : (
+                      <>Selecione um serviço e um horário para continuar.</>
+                    )}
               </p>
 
               <button

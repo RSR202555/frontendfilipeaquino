@@ -26,7 +26,13 @@ export function WorkshopCard({ workshop }: WorkshopCardProps) {
         month: "2-digit",
         year: "numeric",
     });
-    const timeStr = date.toLocaleTimeString("pt-BR", {
+    const startTimeStr = date.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+
+    const endDate = new Date(date.getTime() + workshop.durationMin * 60000);
+    const endTimeStr = endDate.toLocaleTimeString("pt-BR", {
         hour: "2-digit",
         minute: "2-digit",
     });
@@ -78,9 +84,11 @@ export function WorkshopCard({ workshop }: WorkshopCardProps) {
 
                 <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/50">
                     <span>
-                        {dateStr} às {timeStr}
+                        {dateStr}
                     </span>
-                    <span>{workshop.durationMin} min</span>
+                    <span>
+                        {startTimeStr} - {endTimeStr}
+                    </span>
                 </div>
 
                 <p className="text-[11px] text-slate-400">
