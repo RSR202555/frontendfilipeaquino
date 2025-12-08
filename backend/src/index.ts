@@ -35,6 +35,10 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.get('/', (_req, res) => {
+  res.json({ status: 'ok', message: 'Agendamentos backend running' });
+});
+
 app.use('/api/services', servicesRouter);
 app.use('/api/workshops', workshopsRouter);
 app.use('/api/bookings', bookingsRouter);

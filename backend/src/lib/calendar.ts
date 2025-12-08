@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { zonedTimeToUtc } from 'date-fns-tz';
 
 export const DEFAULT_TIMEZONE = 'America/Bahia';

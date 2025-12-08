@@ -140,22 +140,33 @@ function BookingPageInner() {
       setError("Escolha um serviço ou workshop para continuar.");
       return;
     }
-    if (!selectedTimeslot) {
-      setError("Escolha um horário para continuar.");
-      return;
-    }
+    let scheduledAt: Date;
 
-    if (!date) {
-      setError("Escolha uma data para continuar.");
-      return;
+    if (workshopId) {
+      if (!selectedWorkshop) {
+        setError("Workshop não encontrado. Tente novamente.");
+        return;
+      }
+      // Para workshops, usamos diretamente a data definida no cadastro do workshop
+      scheduledAt = new Date(selectedWorkshop.date);
+    } else {
+      if (!selectedTimeslot) {
+        setError("Escolha um horário para continuar.");
+        return;
+      }
+
+      if (!date) {
+        setError("Escolha uma data para continuar.");
+        return;
+      }
+
+      scheduledAt = new Date(`${date}T${time}:00`);
     }
 
     setError(null);
     setLoading(true);
 
     try {
-      const scheduledAt = new Date(`${date}T${time}:00`);
-
       // Payload no formato esperado pelo backend (/api/bookings)
       const body: any = {
         serviceId: selectedServiceId,
@@ -198,7 +209,7 @@ function BookingPageInner() {
         {/* HEADER */}
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-700/60 bg-gradient-to-r from-slate-900/80 via-slate-900/60 to-slate-900/20 text-[10px] uppercase tracking-[0.18em] text-slate-400">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-700/60 bg-gradient-to-r from-slate-900/80 via-slate-900/60 to-slate-900/20 text-[10px] uppercase tracking-[0.18em] text-slate-400">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
               <span>Agenda online · 100% segura</span>
             </div>
@@ -353,55 +364,58 @@ function BookingPageInner() {
               )}
             </div>
 
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 mb-1">
-                Passo 2 · Escolha a data
-              </p>
-              <p className="text-[11px] text-slate-500 mb-2">
-                Selecione o dia em que deseja realizar a aula
-              </p>
-              <input
-                type="date"
-                className="w-full rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-sm text-slate-50 focus:outline-none focus:border-sky-500"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
-            </div>
+            {!workshopId && (
+              <>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 mb-1">
+                    Passo 2 · Escolha a data
+                  </p>
+                  <p className="text-[11px] text-slate-500 mb-2">
+                    Selecione o dia em que deseja realizar a aula
+                  </p>
+                  <input
+                    type="date"
+                    className="w-full rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-sm text-slate-50 focus:outline-none focus:border-sky-500"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                  />
+                </div>
 
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 mb-1">
-                Passo 3 · Escolha o horário
-              </p>
-              <p className="text-[11px] text-slate-500 mb-2">
-                Horários de hoje
-              </p>
-              <div className="grid gap-2 grid-cols-3 sm:grid-cols-4">
-                {TIMESLOTS.map((slot) => {
-                  const isOccupied = occupiedTimes.includes(slot);
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 mb-1">
+                    Passo 3 · Escolha o horário
+                  </p>
+                  <p className="text-[11px] text-slate-500 mb-2">
+                    Horários de hoje
+                  </p>
+                  <div className="grid gap-2 grid-cols-3 sm:grid-cols-4">
+                    {TIMESLOTS.map((slot) => {
+                      const isOccupied = occupiedTimes.includes(slot);
 
-                  return (
-                    <button
-                      key={slot}
-                      type="button"
-                      disabled={isOccupied}
-                      onClick={() => !isOccupied && handleSelectTimeslot(slot)}
-                      className={[
-                        "text-[11px] px-2.5 py-1.5 rounded-full border text-center bg-slate-950/80 text-slate-100 transition",
-                        isOccupied
-                          ? "opacity-40 cursor-not-allowed line-through border-slate-800"
-                          : selectedTimeslot === slot
-                          ? "border-sky-500 bg-slate-900 shadow-[0_0_24px_rgba(56,189,248,0.35)]"
-                          : "border-slate-700 hover:border-sky-500/70",
-                      ].join(" ")}
-                    >
-                      {slot}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          disabled={isOccupied}
+                          onClick={() => !isOccupied && handleSelectTimeslot(slot)}
+                          className={[
+                            "text-[11px] px-2.5 py-1.5 rounded-full border text-center bg-slate-950/80 text-slate-100 transition",
+                            isOccupied
+                              ? "opacity-40 cursor-not-allowed line-through border-slate-800"
+                              : selectedTimeslot === slot
+                              ? "border-sky-500 bg-slate-900 shadow-[0_0_24px_rgba(56,189,248,0.35)]"
+                              : "border-slate-700 hover:border-sky-500/70",
+                          ].join(" ")}
+                        >
+                          {slot}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
             {/* Dados do aluno */}
             <div className="grid gap-3 md:grid-cols-2">
               <div className="flex flex-col gap-1">
@@ -518,7 +532,23 @@ function BookingPageInner() {
               )}
 
               <p className="text-[11px] text-slate-500">
-                {selectedService && selectedTimeslot ? (
+                {workshopId && selectedWorkshop ? (
+                  <>
+                    Você está se inscrevendo no workshop {" "}
+                    <span className="text-sky-100 font-medium">
+                      {selectedWorkshop.title}
+                    </span>{" "}
+                    na data {" "}
+                    <span className="text-sky-100 font-medium">
+                      {new Date(selectedWorkshop.date).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
+                    </span>
+                    .
+                  </>
+                ) : selectedService && selectedTimeslot ? (
                   <>
                     Você selecionou{" "}
                     <span className="text-sky-100 font-medium">
@@ -537,7 +567,11 @@ function BookingPageInner() {
 
               <button
                 type="submit"
-                disabled={loading || (!selectedServiceId && !workshopId) || !selectedTimeslot}
+                disabled={
+                  loading ||
+                  (!selectedServiceId && !workshopId) ||
+                  (!workshopId && !selectedTimeslot)
+                }
                 className="w-full inline-flex items-center justify-center rounded-full bg-gradient-to-r from-sky-500 to-sky-400 text-slate-950 text-sm font-semibold px-4 py-2.5 shadow-[0_0_30px_rgba(56,189,248,0.5)] disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-105 transition"
               >
                 {loading ? "Confirmando..." : "Confirmar agendamento"}

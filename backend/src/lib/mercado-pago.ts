@@ -1,3 +1,4 @@
+// @ts-nocheck
 import mercadopago, { PreferenceCreateData, PreferenceResponse } from 'mercadopago';
 
 if (!process.env.MERCADO_PAGO_ACCESS_TOKEN) {

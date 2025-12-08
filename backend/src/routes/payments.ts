@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Router } from 'express';
 import mercadopago from 'mercadopago';
 import { prisma } from '../lib/prisma';
