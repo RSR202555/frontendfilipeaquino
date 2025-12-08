@@ -327,79 +327,23 @@ function BookingPageInner() {
                         hour: "2-digit",
                         minute: "2-digit",
                       });
-                  {services.map((service) => (
-                    <button
-                      key={service.id}
-                      type="button"
-                      onClick={() => handleSelectService(service.id)}
-                      className={[
-                        "text-left rounded-2xl border px-3 py-2.5 bg-slate-950/80 text-xs md:text-[13px] flex flex-col gap-1 transition",
-                        selectedServiceId === service.id
-                          ? "border-sky-500 bg-slate-950 shadow-[0_0_26px_rgba(56,189,248,0.35)]"
-                          : "border-slate-700 hover:border-sky-500/70",
-                      ].join(" ")}
-                    >
-                      <span className="font-medium text-slate-50">
-                        {service.name}
-                      </span>
-                      {service.description && (
-                        <span className="text-[11px] text-slate-400 line-clamp-2">
-                          {service.description}
-                        </span>
-                      )}
-                      <span className="text-[11px] text-slate-400">
-                        {service.durationMin} min ·{" "}
-                        <span className="text-sky-300 font-medium">
-                          R${" "}
-                          {Number(service.basePrice)
-                            .toFixed(2)
-                            .replace(".", ",")}
-                        </span>
-                      </span>
-                    </button>
-                  ))}
 
-                  {services.length === 0 && (
-                    <div className="col-span-full text-xs text-slate-500">
-                      Nenhum serviço encontrado. Verifique o cadastro no painel
-                      admin.
-                    </div>
-                  )}
+                      return (
+                        <>
+                          {dateLabel}{" "}· {startTimeLabel} - {endTimeLabel} ·{" "}
+                          <span className="text-sky-300 font-medium">
+                            R${" "}
+                            {Number(selectedWorkshop.price).toFixed(2).replace(".", ",")}
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </span>
                 </div>
-              </>
-            )}
-          </div>
-
-          {!workshopId && (
-            <>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 mb-1">
-                  Passo 2 · Escolha a data
-                </p>
-                <p className="text-[11px] text-slate-500 mb-2">
-                  Selecione o dia em que deseja realizar a aula
-                </p>
-                <input
-                  type="date"
-                  className="w-full rounded-xl bg-slate-950/80 border border-slate-700 px-3 py-2 text-sm text-slate-50 focus:outline-none focus:border-sky-500"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 mb-1">
-                  Passo 3 · Escolha o horário
-                </p>
-                <p className="text-[11px] text-slate-500 mb-2">
-                  Horários de hoje
-                </p>
-                <div className="grid gap-2 grid-cols-3 sm:grid-cols-4">
-                  {TIMESLOTS.map((slot) => {
-                    const isOccupied = occupiedTimes.includes(slot);
-
-                    return (
+              ) : (
+                <>
+                  <p className="text-[11px] text-slate-500 mb-2">
+                    Serviços disponíveis
                   </p>
                   <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
                     {services.map((service) => (
