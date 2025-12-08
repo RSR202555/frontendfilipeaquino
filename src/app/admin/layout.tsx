@@ -18,6 +18,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <nav className="flex flex-col gap-2 text-sm text-slate-300">
           <a href="/admin" className="hover:text-sky-400">Agenda semanal</a>
           <a href="/admin/services" className="hover:text-sky-400">Serviços</a>
+          <a href="/admin/plans" className="hover:text-sky-400">Planos</a>
           <a href="/admin/workshops" className="hover:text-sky-400">Workshops</a>
           <a href="/admin/testimonials" className="hover:text-sky-400">Depoimentos</a>
           <a href="/admin/settings" className="hover:text-sky-400">Configurações</a>
