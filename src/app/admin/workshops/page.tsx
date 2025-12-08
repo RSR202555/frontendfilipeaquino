@@ -259,10 +259,21 @@ function WorkshopModal({ workshop, onClose, onSuccess }: WorkshopModalProps) {
 
   const [title, setTitle] = useState(workshop?.title || "");
   const [description, setDescription] = useState(workshop?.description || "");
-  const [date, setDate] = useState(() => {
+  const [dateOnly, setDateOnly] = useState(() => {
     if (!workshop) return "";
     const d = new Date(workshop.date);
-    return d.toISOString().slice(0, 16);
+    return d.toISOString().slice(0, 10); // yyyy-mm-dd
+  });
+  const [startTime, setStartTime] = useState(() => {
+    if (!workshop) return "";
+    const d = new Date(workshop.date);
+    return d.toTimeString().slice(0, 5); // HH:MM
+  });
+  const [endTime, setEndTime] = useState(() => {
+    if (!workshop) return "";
+    const start = new Date(workshop.date);
+    const end = new Date(start.getTime() + workshop.durationMin * 60000);
+    return end.toTimeString().slice(0, 5);
   });
   const [durationMin, setDurationMin] = useState(workshop?.durationMin || 240);
   const [maxSeats, setMaxSeats] = useState(workshop?.maxSeats || 10);
@@ -301,10 +312,31 @@ function WorkshopModal({ workshop, onClose, onSuccess }: WorkshopModalProps) {
     e.preventDefault();
     setError(null);
 
-    if (!title || !date || !price) {
-      setError("Título, data e preço são obrigatórios");
+    if (!title || !dateOnly || !startTime || !endTime || !price) {
+      setError("Título, data, horários e preço são obrigatórios");
       return;
     }
+
+    // Monta Date de início/fim a partir da data e horários
+    const startIso = `${dateOnly}T${startTime}:00`;
+    const endIso = `${dateOnly}T${endTime}:00`;
+
+    const startDate = new Date(startIso);
+    const endDate = new Date(endIso);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      setError("Horários inválidos. Verifique os campos de hora inicial e final.");
+      return;
+    }
+
+    if (endDate <= startDate) {
+      setError("Hora de término deve ser depois da hora inicial.");
+      return;
+    }
+
+    const calculatedDurationMin = Math.round(
+      (endDate.getTime() - startDate.getTime()) / 60000
+    );
 
     try {
       setLoading(true);
@@ -312,8 +344,8 @@ function WorkshopModal({ workshop, onClose, onSuccess }: WorkshopModalProps) {
       const body = {
         title,
         description: description || null,
-        date: new Date(date).toISOString(),
-        durationMin,
+        date: startDate.toISOString(),
+        durationMin: calculatedDurationMin,
         maxSeats,
         price: parseFloat(price),
         imageUrl: imageUrl || null,
@@ -381,26 +413,36 @@ function WorkshopModal({ workshop, onClose, onSuccess }: WorkshopModalProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs mb-1 text-slate-300">Data e Horário *</label>
+              <label className="block text-xs mb-1 text-slate-300">Data *</label>
               <input
-                type="datetime-local"
+                type="date"
                 required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                value={dateOnly}
+                onChange={(e) => setDateOnly(e.target.value)}
                 className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs mb-1 text-slate-300">Duração (minutos) *</label>
+              <label className="block text-xs mb-1 text-slate-300">Hora inicial *</label>
               <input
-                type="number"
+                type="time"
                 required
-                min="1"
-                value={durationMin}
-                onChange={(e) => setDurationMin(parseInt(e.target.value))}
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs mb-1 text-slate-300">Hora de término *</label>
+              <input
+                type="time"
+                required
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
                 className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               />
             </div>
