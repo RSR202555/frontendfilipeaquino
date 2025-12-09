@@ -13,6 +13,13 @@ interface Service {
   active: boolean;
 }
 
+interface Availability {
+  id: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+}
+
 export default function AdminServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +28,11 @@ export default function AdminServicesPage() {
   const [success, setSuccess] = useState(false);
 
   const [editing, setEditing] = useState<Partial<Service> | null>(null);
+  const [availabilities, setAvailabilities] = useState<Availability[]>([]);
+  const [loadingAvail, setLoadingAvail] = useState(false);
+  const [newAvailDate, setNewAvailDate] = useState("");
+  const [newAvailStart, setNewAvailStart] = useState("");
+  const [newAvailEnd, setNewAvailEnd] = useState("");
 
   async function load() {
     setLoading(true);
@@ -55,6 +67,80 @@ export default function AdminServicesPage() {
     }
     setSuccess(false);
     setError(null);
+
+    // ao abrir edição, se já existe serviço, carrega disponibilidades
+    if (service) {
+      loadAvailabilities(service.id);
+    } else {
+      setAvailabilities([]);
+    }
+  }
+
+  async function loadAvailabilities(serviceId: number) {
+    setLoadingAvail(true);
+    try {
+      const data = await apiGet<Availability[]>(`/api/availabilities/admin?serviceId=${serviceId}`);
+      // normaliza datas/horas para strings simples
+      const normalized = data.map((a) => {
+        const d = new Date(a.date as any);
+        const s = new Date(a.startTime as any);
+        const e = new Date(a.endTime as any);
+        return {
+          ...a,
+          date: d.toISOString().slice(0, 10),
+          startTime: s.toTimeString().slice(0, 5),
+          endTime: e.toTimeString().slice(0, 5),
+        };
+      });
+      setAvailabilities(normalized);
+    } catch (e) {
+      // mantém silencioso por enquanto
+    } finally {
+      setLoadingAvail(false);
+    }
+  }
+
+  async function handleAddAvailability(serviceId: number) {
+    if (!newAvailDate || !newAvailStart || !newAvailEnd) {
+      setError("Para adicionar um horário, preencha data, hora inicial e hora final.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      await apiPost("/api/availabilities/admin/create", {
+        serviceId,
+        date: newAvailDate,
+        startTime: newAvailStart,
+        endTime: newAvailEnd,
+      });
+
+      setNewAvailDate("");
+      setNewAvailStart("");
+      setNewAvailEnd("");
+      await loadAvailabilities(serviceId);
+    } catch (e) {
+      setError("Erro ao adicionar horário. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteAvailability(serviceId: number, availabilityId: number) {
+    const confirmDelete = window.confirm("Remover este horário disponível?");
+    if (!confirmDelete) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      await apiPost("/api/availabilities/admin/delete", { id: availabilityId });
+      await loadAvailabilities(serviceId);
+    } catch (e) {
+      setError("Erro ao remover horário. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -348,6 +434,96 @@ export default function AdminServicesPage() {
               </label>
             </div>
           </div>
+
+          {editing.id && editing.id !== 0 && (
+            <div className="mt-4 border-t border-slate-800 pt-4 space-y-3">
+              <h3 className="text-sm font-medium text-slate-100">Horários disponíveis para este serviço</h3>
+              <p className="text-[11px] text-slate-500">
+                Cadastre datas e horários em que este serviço pode ser agendado. Em breve esses horários poderão ser usados automaticamente na página de agendamento.
+              </p>
+
+              <div className="space-y-2">
+                {loadingAvail ? (
+                  <p className="text-[11px] text-slate-400">Carregando horários...</p>
+                ) : availabilities.length === 0 ? (
+                  <p className="text-[11px] text-slate-500">Nenhum horário cadastrado ainda para este serviço.</p>
+                ) : (
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/60 divide-y divide-slate-800">
+                    {availabilities.map((a) => {
+                      const d = new Date(a.date + 'T00:00:00');
+                      const dateLabel = d.toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      });
+                      return (
+                        <div key={a.id} className="flex items-center justify-between px-3 py-2 text-[11px]">
+                          <span className="text-slate-300">
+                            {dateLabel} · {a.startTime} - {a.endTime}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAvailability(editing.id as number, a.id)}
+                            className="text-[10px] px-2 py-1 rounded-full border border-red-700 hover:border-red-500 hover:text-red-300"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid gap-2 md:grid-cols-4 items-end">
+                <div className="space-y-1">
+                  <label className="block text-xs text-slate-400" htmlFor="availDate">
+                    Data
+                  </label>
+                  <input
+                    id="availDate"
+                    type="date"
+                    value={newAvailDate}
+                    onChange={(e) => setNewAvailDate(e.target.value)}
+                    className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs text-slate-400" htmlFor="availStart">
+                    Hora inicial
+                  </label>
+                  <input
+                    id="availStart"
+                    type="time"
+                    value={newAvailStart}
+                    onChange={(e) => setNewAvailStart(e.target.value)}
+                    className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs text-slate-400" htmlFor="availEnd">
+                    Hora final
+                  </label>
+                  <input
+                    id="availEnd"
+                    type="time"
+                    value={newAvailEnd}
+                    onChange={(e) => setNewAvailEnd(e.target.value)}
+                    className="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                  />
+                </div>
+                <div className="flex justify-end md:justify-start">
+                  <button
+                    type="button"
+                    onClick={() => handleAddAvailability(editing.id as number)}
+                    className="mt-1 rounded-full bg-sky-500 px-4 py-2 text-xs font-medium text-slate-950 hover:bg-sky-400 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    Adicionar horário
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 mt-2">
             <button
