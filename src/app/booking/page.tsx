@@ -158,14 +158,19 @@ function BookingPageInner() {
         const data = await apiGet<Availability[]>(`/api/availabilities?${params.toString()}`);
 
         const normalized = data.map((a) => {
-          const d = new Date(a.date as any);
-          const s = new Date(a.startTime as any);
-          const e = new Date(a.endTime as any);
+          const rawDate = String(a.date);
+          const rawStart = String(a.startTime);
+          const rawEnd = String(a.endTime);
+
+          const datePart = rawDate.split('T')[0] || rawDate; // YYYY-MM-DD
+          const startPart = rawStart.split('T')[1]?.slice(0, 5) || rawStart.slice(11, 16) || rawStart;
+          const endPart = rawEnd.split('T')[1]?.slice(0, 5) || rawEnd.slice(11, 16) || rawEnd;
+
           return {
             ...a,
-            date: d.toISOString().slice(0, 10),
-            startTime: s.toTimeString().slice(0, 5),
-            endTime: e.toTimeString().slice(0, 5),
+            date: datePart,
+            startTime: startPart,
+            endTime: endPart,
           };
         });
 
