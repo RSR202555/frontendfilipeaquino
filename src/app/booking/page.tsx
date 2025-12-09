@@ -29,6 +29,13 @@ interface Workshop {
   price: string | number;
 }
 
+interface Availability {
+  id: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+}
+
 const TIMESLOTS = [
   "06:00", "07:00", "08:00",
   "09:30", "10:30", "14:00",
@@ -47,6 +54,9 @@ function BookingPageInner() {
   const [selectedTimeslot, setSelectedTimeslot] = useState<string | null>(null);
   const [occupiedTimes, setOccupiedTimes] = useState<string[]>([]);
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
+  const [availabilities, setAvailabilities] = useState<Availability[]>([]);
+  const [loadingAvailabilities, setLoadingAvailabilities] = useState(false);
+  const [selectedAvailabilityId, setSelectedAvailabilityId] = useState<number | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -131,6 +141,49 @@ function BookingPageInner() {
     loadOccupiedTimes();
   }, [date, selectedServiceId, workshopId]);
 
+  useEffect(() => {
+    async function loadAvailabilities() {
+      if (!selectedServiceId || !date || workshopId) {
+        setAvailabilities([]);
+        setSelectedAvailabilityId(null);
+        return;
+      }
+
+      setLoadingAvailabilities(true);
+      try {
+        const params = new URLSearchParams();
+        params.set("serviceId", String(selectedServiceId));
+        params.set("date", date);
+
+        const data = await apiGet<Availability[]>(`/api/availabilities?${params.toString()}`);
+
+        const normalized = data.map((a) => {
+          const d = new Date(a.date as any);
+          const s = new Date(a.startTime as any);
+          const e = new Date(a.endTime as any);
+          return {
+            ...a,
+            date: d.toISOString().slice(0, 10),
+            startTime: s.toTimeString().slice(0, 5),
+            endTime: e.toTimeString().slice(0, 5),
+          };
+        });
+
+        setAvailabilities(normalized);
+        setSelectedAvailabilityId(null);
+        setSelectedTimeslot(null);
+      } catch (e) {
+        console.error(e);
+        setAvailabilities([]);
+        setSelectedAvailabilityId(null);
+      } finally {
+        setLoadingAvailabilities(false);
+      }
+    }
+
+    loadAvailabilities();
+  }, [selectedServiceId, date, workshopId]);
+
   function showToast(message: string) {
     setToastMessage(message);
     setTimeout(() => setToastMessage(null), 3200);
@@ -138,11 +191,18 @@ function BookingPageInner() {
 
   function handleSelectService(id: number) {
     setSelectedServiceId(id);
+    setSelectedTimeslot(null);
+    setSelectedAvailabilityId(null);
   }
 
-  function handleSelectTimeslot(t: string) {
+  function handleSelectTimeslot(t: string, availabilityId?: number) {
     setSelectedTimeslot(t);
     setTime(t);
+    if (availabilityId != null) {
+      setSelectedAvailabilityId(availabilityId);
+    } else {
+      setSelectedAvailabilityId(null);
+    }
   }
 
   async function handleConfirm(e: FormEvent) {
@@ -161,13 +221,13 @@ function BookingPageInner() {
       // Para workshops, usamos diretamente a data definida no cadastro do workshop
       scheduledAt = new Date(selectedWorkshop.date);
     } else {
-      if (!selectedTimeslot) {
-        setError("Escolha um horário para continuar.");
+      if (!date) {
+        setError("Escolha uma data para continuar.");
         return;
       }
 
-      if (!date) {
-        setError("Escolha uma data para continuar.");
+      if (!selectedTimeslot || !selectedAvailabilityId) {
+        setError("Escolha um horário disponível para continuar.");
         return;
       }
 
@@ -178,10 +238,20 @@ function BookingPageInner() {
     setLoading(true);
 
     try {
+      // Formata data de nascimento (yyyy-MM-dd -> dd-MM-yyyy) para exibição no painel admin
+      let formattedBirthDate = birthDate;
+      if (birthDate) {
+        const [year, month, day] = birthDate.split("-");
+        if (year && month && day) {
+          formattedBirthDate = `${day}-${month}-${year}`;
+        }
+      }
+
       // Payload no formato esperado pelo backend (/api/bookings)
       const body: any = {
         serviceId: selectedServiceId,
         workshopId: workshopId ? Number(workshopId) : undefined,
+        availabilityId: selectedAvailabilityId || undefined,
         scheduledAt: scheduledAt.toISOString(),
         customer: {
           name,
@@ -193,7 +263,7 @@ function BookingPageInner() {
         customField:
           customField ||
           `Idade: ${age || "-"} | Nível: ${knowledgeLevel || "-"} | Nascimento: ${
-            birthDate || "-"
+            formattedBirthDate || "-"
           } | Instagram: ${instagram || "-"}`,
       };
 
@@ -414,29 +484,41 @@ function BookingPageInner() {
                   <p className="text-[11px] text-slate-500 mb-2">
                     Horários de hoje
                   </p>
-                  <div className="grid gap-2 grid-cols-3 sm:grid-cols-4">
-                    {TIMESLOTS.map((slot) => {
-                      const isOccupied = occupiedTimes.includes(slot);
-
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          disabled={isOccupied}
-                          onClick={() => !isOccupied && handleSelectTimeslot(slot)}
-                          className={[
-                            "text-[11px] px-2.5 py-1.5 rounded-full border text-center bg-slate-950/80 text-slate-100 transition",
-                            isOccupied
-                              ? "opacity-40 cursor-not-allowed line-through border-slate-800"
-                              : selectedTimeslot === slot
-                              ? "border-sky-500 bg-slate-900 shadow-[0_0_24px_rgba(56,189,248,0.35)]"
-                              : "border-slate-700 hover:border-sky-500/70",
-                          ].join(" ")}
-                        >
-                          {slot}
-                        </button>
-                      );
-                    })}
+                  <div className="flex flex-wrap gap-2">
+                    {loadingAvailabilities && selectedServiceId ? (
+                      <span className="text-[11px] text-slate-400">Carregando horários...</span>
+                    ) : selectedServiceId && date && availabilities.length === 0 ? (
+                      <span className="text-[11px] text-rose-300">
+                        Nenhum horário disponível cadastrado para esta data. Escolha outra data.
+                      </span>
+                    ) : !selectedServiceId ? (
+                      <span className="text-[11px] text-slate-400">
+                        Selecione um serviço para ver os horários disponíveis.
+                      </span>
+                    ) : (
+                      availabilities.map((a) => {
+                        const slot = a.startTime;
+                        const isOccupied = occupiedTimes.includes(slot);
+                        return (
+                          <button
+                            key={a.id}
+                            type="button"
+                            disabled={isOccupied}
+                            onClick={() => !isOccupied && handleSelectTimeslot(slot, a.id)}
+                            className={[
+                              "text-[11px] px-2.5 py-1.5 rounded-full border text-center bg-slate-950/80 text-slate-100 transition",
+                              isOccupied
+                                ? "opacity-40 cursor-not-allowed line-through border-slate-800"
+                                : selectedAvailabilityId === a.id
+                                ? "border-sky-500 bg-slate-900 shadow-[0_0_24px_rgba(56,189,248,0.35)]"
+                                : "border-slate-700 hover:border-sky-500/70",
+                            ].join(" ")}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </>

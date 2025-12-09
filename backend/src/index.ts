@@ -7,6 +7,8 @@ import { workshopsRouter } from './routes/workshops';
 import { bookingsRouter } from './routes/bookings';
 import { paymentsRouter } from './routes/payments';
 import { leadsRouter } from './routes/leads';
+import { plansRouter } from './routes/plans';
+import { availabilitiesRouter } from './routes/availabilities';
 import { adminBootstrapRouter } from './routes/adminBootstrap';
 import { settingsRouter } from './routes/settings';
 import { uploadAvatarRouter } from './routes/uploadAvatar';
@@ -40,6 +42,8 @@ app.get('/', (_req, res) => {
 });
 
 app.use('/api/services', servicesRouter);
+app.use('/api/plans', plansRouter);
+app.use('/api/availabilities', availabilitiesRouter);
 app.use('/api/workshops', workshopsRouter);
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/payments', paymentsRouter);
