@@ -1,5 +1,5 @@
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'https://app-appbackefilipe.qeqzxb.easypanel.host';
+  process.env.NEXT_PUBLIC_API_URL || 'https://aplicacoes-backendfilipeaquino.4icfs8.easypanel.host';
 
 const API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '';
 
