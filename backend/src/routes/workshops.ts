@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
+import { authMiddleware } from '../middlewares/authMiddleware';
 
 export const workshopsRouter = Router();
 
 // GET /api/workshops - Lista workshops ativos (público)
 workshopsRouter.get('/', async (_req, res) => {
+  // ... rest of the file stays same until admin routes ...
+
   try {
     const workshops = await prisma.workshop.findMany({
       where: { active: true },
@@ -38,7 +41,7 @@ workshopsRouter.get('/', async (_req, res) => {
 });
 
 // GET /api/admin/workshops - Lista todos workshops (admin)
-workshopsRouter.get('/admin/all', async (_req, res) => {
+workshopsRouter.get('/admin/all', authMiddleware, async (_req, res) => {
   try {
     const workshops = await prisma.workshop.findMany({
       orderBy: { date: 'desc' },
@@ -72,7 +75,7 @@ workshopsRouter.get('/admin/all', async (_req, res) => {
 });
 
 // POST /api/admin/workshops - Criar novo workshop
-workshopsRouter.post('/admin/create', async (req, res) => {
+workshopsRouter.post('/admin/create', authMiddleware, async (req, res) => {
   try {
     const { title, description, date, durationMin, maxSeats, price, imageUrl } = req.body;
 
@@ -117,7 +120,7 @@ workshopsRouter.post('/admin/create', async (req, res) => {
 });
 
 // PUT /api/admin/workshops/:id - Atualizar workshop
-workshopsRouter.put('/admin/:id', async (req, res) => {
+workshopsRouter.put('/admin/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { title, description, date, durationMin, maxSeats, price, imageUrl, active } = req.body;
@@ -167,7 +170,7 @@ workshopsRouter.put('/admin/:id', async (req, res) => {
 });
 
 // DELETE /api/admin/workshops/:id - Deletar workshop
-workshopsRouter.delete('/admin/:id', async (req, res) => {
+workshopsRouter.delete('/admin/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
 
@@ -201,7 +204,7 @@ workshopsRouter.delete('/admin/:id', async (req, res) => {
 });
 
 // PATCH /api/admin/workshops/:id/toggle - Ativar/desativar workshop
-workshopsRouter.patch('/admin/:id/toggle', async (req, res) => {
+workshopsRouter.patch('/admin/:id/toggle', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
 
@@ -223,7 +226,7 @@ workshopsRouter.patch('/admin/:id/toggle', async (req, res) => {
 });
 
 // GET /api/workshops/admin/:id/registrations - Obter inscritos do workshop
-workshopsRouter.get('/admin/:id/registrations', async (req, res) => {
+workshopsRouter.get('/admin/:id/registrations', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
 

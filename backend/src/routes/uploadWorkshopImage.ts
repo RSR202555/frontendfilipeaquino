@@ -27,7 +27,22 @@ const storage = multer.diskStorage({
     },
 });
 
-const upload = multer({ storage });
+const upload = multer({
+    storage,
+    fileFilter: (_req, file, cb) => {
+        const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+        const ext = path.extname(file.originalname).toLowerCase();
+
+        if (allowedExtensions.includes(ext)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Apenas imagens (.jpg, .jpeg, .png, .webp) são permitidas!'));
+        }
+    },
+    limits: {
+        fileSize: 5 * 1024 * 1024, // Limite de 5MB
+    }
+});
 
 // POST /api/admin/upload-workshop-image
 uploadWorkshopImageRouter.post("/", upload.single("image"), async (req, res) => {

@@ -160,9 +160,13 @@ export default function AdminSettingsPage() {
                       `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/admin/upload-avatar`,
                       {
                         method: "POST",
+                        headers: {
+                          'x-api-key': process.env.NEXT_PUBLIC_ADMIN_API_KEY || '',
+                        },
                         body: formData,
                       }
                     );
+
                     if (!res.ok) {
                       throw new Error("Falha no upload do avatar");
                     }

@@ -1,8 +1,15 @@
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'https://app-appbackefilipe.qeqzxb.easypanel.host';
 
+const API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '';
+
 export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { cache: 'no-store' });
+  const res = await fetch(`${API_URL}${path}`, {
+    cache: 'no-store',
+    headers: {
+      'x-api-key': API_KEY,
+    }
+  });
   if (!res.ok) {
     throw new Error(`Erro na API: ${res.status}`);
   }
@@ -14,6 +21,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
     },
     body: JSON.stringify(body),
   });
@@ -28,6 +36,7 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
     },
     body: JSON.stringify(body),
   });
@@ -40,6 +49,9 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
 export async function apiDelete<T>(path: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'DELETE',
+    headers: {
+      'x-api-key': API_KEY,
+    },
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
@@ -53,6 +65,7 @@ export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
     },
     body: body ? JSON.stringify(body) : undefined,
   });
@@ -61,3 +74,4 @@ export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
   }
   return res.json();
 }
+
