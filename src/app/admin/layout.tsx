@@ -8,7 +8,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   // protege rota admin: só ADMIN
   if (!session || (session.user as any)?.role !== "ADMIN") {
-    redirect("/admin-login");
+    redirect("/admin/login");
   }
 
   return (
