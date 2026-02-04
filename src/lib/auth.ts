@@ -5,7 +5,7 @@ import GithubProvider from 'next-auth/providers/github';
 export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
   pages: {
-    signIn: '/admin/login',
+    signIn: '/admin-login',
   },
   providers: [
     GithubProvider({
