@@ -1,11 +1,17 @@
 // @ts-nocheck
 import { Router } from 'express';
-import mercadopago from 'mercadopago';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { prisma } from '../lib/prisma';
 import { sendMail } from '../lib/mail';
 import { createPaymentPreference } from '../lib/mercado-pago';
 
 export const paymentsRouter = Router();
+
+const mpClient = new MercadoPagoConfig({
+  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || '',
+});
+
+const mpPaymentClient = new Payment(mpClient);
 
 interface MercadoPagoWebhookBody {
   action?: string;
@@ -73,9 +79,13 @@ paymentsRouter.post('/create-preference', async (req, res) => {
       },
     });
 
+    const initPoint = preference?.body?.init_point ?? preference?.init_point;
+    const sandboxInitPoint =
+      preference?.body?.sandbox_init_point ?? preference?.sandbox_init_point;
+
     return res.json({
-      init_point: preference.body.init_point,
-      sandbox_init_point: preference.body.sandbox_init_point,
+      init_point: initPoint,
+      sandbox_init_point: sandboxInitPoint,
     });
   } catch (error) {
     console.error('Erro ao criar preferência de pagamento', error);
@@ -135,12 +145,12 @@ paymentsRouter.post('/webhook', async (req, res) => {
       return res.status(400).json({ error: 'ID de pagamento não encontrado' });
     }
 
-    const mpPayment = await mercadopago.payment.findById(Number(paymentId));
-    const status = mpPayment.body.status;
+    const mpPayment = await mpPaymentClient.get({ id: Number(paymentId) });
+    const status = mpPayment?.body?.status ?? mpPayment?.status;
 
-    const providerId = String(mpPayment.body.id);
+    const providerId = String(mpPayment?.body?.id ?? mpPayment?.id);
 
-    const metadata: any = mpPayment.body.metadata || {};
+    const metadata: any = (mpPayment?.body?.metadata ?? mpPayment?.metadata) || {};
 
     // Fluxo de planos de consultoria da landing page
     if (metadata?.type === 'consulting_plan' && metadata.leadId) {
@@ -188,8 +198,8 @@ paymentsRouter.post('/webhook', async (req, res) => {
         where: { id: payment.id },
         data: {
           status: 'APPROVED',
-          method: mpPayment.body.payment_method_id,
-          rawPayload: mpPayment.body as any,
+          method: (mpPayment?.body?.payment_method_id ?? mpPayment?.payment_method_id) as any,
+          rawPayload: (mpPayment?.body ?? mpPayment) as any,
         },
       });
 
@@ -217,8 +227,8 @@ paymentsRouter.post('/webhook', async (req, res) => {
         where: { id: payment.id },
         data: {
           status: 'REJECTED',
-          method: mpPayment.body.payment_method_id,
-          rawPayload: mpPayment.body as any,
+          method: (mpPayment?.body?.payment_method_id ?? mpPayment?.payment_method_id) as any,
+          rawPayload: (mpPayment?.body ?? mpPayment) as any,
         },
       });
 
